@@ -60,6 +60,11 @@ namespace rt
             return X * other.X + Y * other.Y + Z * other.Z;
         }
 
+        public static Vector operator *(double scalar, Vector v)
+        {
+            return new Vector(v.X * scalar, v.Y * scalar, v.Z * scalar);
+        }
+
         public static Vector operator ^(Vector a, Vector b)
         {
             return new Vector(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);

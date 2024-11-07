@@ -46,15 +46,19 @@ namespace rt
                     new ColorMap()
                         .Add(1, 1, new Color(0.7, 0.0, 0.0, 0.05))
                         .Add(2, 2, new Color(0.0, 0.7, 0.0, 1.0))
-                ),  
+                ),
             };
 
-            var lights = new []
+            var lights = new[]
             {
-                new Light(new Vector( 65.0,  40.0,  90.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), 1.0),
-                new Light(new Vector(-10.0,  40.0, 165.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), 1.0),
-                new Light(new Vector( 65.0, -35.0, 165.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), 1.0),
-                new Light(new Vector( 65.0,  40.0, 165.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0), 1.0)
+                new Light(new Vector(65.0, 40.0, 90.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0),
+                    new Color(0.8, 0.8, 0.8, 1.0), 1.0),
+                new Light(new Vector(-10.0, 40.0, 165.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0),
+                    new Color(0.8, 0.8, 0.8, 1.0), 1.0),
+                new Light(new Vector(65.0, -35.0, 165.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0),
+                    new Color(0.8, 0.8, 0.8, 1.0), 1.0),
+                new Light(new Vector(65.0, 40.0, 165.0), new Color(0.8, 0.8, 0.8, 1.0), new Color(0.8, 0.8, 0.8, 1.0),
+                    new Color(0.8, 0.8, 0.8, 1.0), 1.0)
             };
             var rt = new RayTracer(geometries, lights);
 
@@ -68,20 +72,20 @@ namespace rt
             const double dist = 95.0;
             const int n = 90;
             const double step = 360.0 / n;
-            
+
             var tasks = new Task[n];
             for (var i = 0; i < n; i++)
             {
-                var ind = new[]{i};
+                var ind = new[] { i };
                 tasks[i] = Task.Run(() =>
                 {
                     var k = ind[0];
                     var a = (step * k) * Math.PI / 180.0;
-                    var ca =  Math.Cos(a);
-                    var sa =  Math.Sin(a);
-            
+                    var ca = Math.Cos(a);
+                    var sa = Math.Sin(a);
+
                     var dir = first * ca + (up ^ first) * sa + up * (up * first) * (1.0 - ca);
-            
+
                     var camera = new Camera(
                         middle - dir * dist,
                         dir,
@@ -92,14 +96,14 @@ namespace rt
                         0.0,
                         1000.0
                     );
-            
-                    var filename = frames+"/" + $"{k + 1:000}" + ".png";
-            
+
+                    var filename = frames + "/" + $"{k + 1:000}" + ".png";
+
                     rt.Render(camera, width, height, filename);
-                    Console.WriteLine($"Frame {k+1}/{n} completed");
+                    Console.WriteLine($"Frame {k + 1}/{n} completed");
                 });
             }
-            
+
             Task.WaitAll(tasks);
         }
     }
