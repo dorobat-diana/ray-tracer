@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "57vCVMplLaI=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\DIANA\\Desktop\\incomplete-ray-traicer\\ray-tracer.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\DIANA\\.nuget\\packages\\microsoft.win32.systemevents\\8.0.0-rc.2.23479.6\\microsoft.win32.systemevents.8.0.0-rc.2.23479.6.nupkg.sha512",
+    "C:\\Users\\DIANA\\.nuget\\packages\\system.drawing.common\\7.0.0\\system.drawing.common.7.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
