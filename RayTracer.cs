@@ -43,15 +43,11 @@ namespace rt
 
         private bool IsLit(Vector point, Light light)
         {
-            // Create a ray from the light to the point on the surface
-            Vector directionToPoint = (point - light.Position).Normalize();
-            Line shadowRay = new Line(light.Position, directionToPoint);
-
-            // Check if there's any geometry between the light and the point
-            var intersection = FindFirstIntersection(shadowRay, 0.001, (light.Position - point).Length());
-
-            // If there's an intersection, the point is in shadow
-            return !intersection.Valid || !intersection.Visible;
+            var line = new Line(light.Position, point);
+            var intersection = FindFirstIntersection(line, 0.001, (light.Position - point).Length());
+            if (!intersection.Valid || !intersection.Visible)
+                return true;
+            return intersection.T > (light.Position - point).Length()-0.001;
         }
 
         public void Render(Camera camera, int width, int height, string filename)
@@ -72,12 +68,12 @@ namespace rt
                     Vector viewRight = (camera.Direction ^ camera.Up).Normalize(); // Cross product
 
                     // Compute the position on the view plane
-                    Vector pixelPosition = camera.Direction * camera.ViewPlaneDistance +
+                    Vector pixelPosition = (camera.Direction * camera.ViewPlaneDistance +
                                            viewRight * u +
-                                           camera.Up * v;
+                                           camera.Up * v).Normalize();
 
                     // Create a ray from the camera position through the pixel position
-                    Line ray = new Line(camera.Position, (pixelPosition) + camera.Position);
+                    Line ray = new Line(camera.Position, pixelPosition + camera.Position);
 
                     // Find the first intersection with objects in geometries
                     Intersection intersection =
@@ -87,7 +83,7 @@ namespace rt
                     if (intersection.Valid && intersection.Visible)
                     {
                         // Start with ambient lighting component
-                        var color = intersection.Material.Ambient;
+                        var color = intersection.Material.Ambient ;
 
                         foreach (var light in lights)
                         {
@@ -114,7 +110,7 @@ namespace rt
 
                                 // Compute reflection vector (R)
                                 double NdotT = N * T;
-                                Vector R = (2 * NdotT * N - T).Normalize();
+                                Vector R = (2 * NdotT * N - T ).Normalize();
 
                                 // Diffuse lighting component (only if N * T > 0)
                                 if (NdotT > 0)
@@ -134,7 +130,7 @@ namespace rt
                             // Apply the light intensity (L)
                             color *= light.Intensity;
                         }
-
+                        
                         // Set pixel color based on the final computed color
                         image.SetPixel(i, j, color);
                     }

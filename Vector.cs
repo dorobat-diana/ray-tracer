@@ -53,12 +53,6 @@ namespace rt
         {
             return v.X * b.X + v.Y * b.Y + v.Z * b.Z;
         }
-        
-        // Method to calculate dot product
-        public double Dot(Vector other)
-        {
-            return X * other.X + Y * other.Y + Z * other.Z;
-        }
 
         public static Vector operator *(double scalar, Vector v)
         {
@@ -78,13 +72,6 @@ namespace rt
         public static Vector operator /(Vector v, double k)
         {
             return new Vector(v.X / k, v.Y / k, v.Z / k);
-        }
-
-        public void Multiply(Vector k)
-        {
-            X *= k.X;
-            Y *= k.Y;
-            Z *= k.Z;
         }
 
         public void Divide(Vector k)
