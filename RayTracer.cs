@@ -52,7 +52,7 @@ namespace rt
 
         public void Render(Camera camera, int width, int height, string filename)
         {
-            var background = new Color(0.2, 0.2, 0.2, 1.0); // Background color
+            var background = new Color(0.1, 0.1, 0.1, 1.0); // Background color
 
             var image = new Image(width, height);
 
@@ -83,7 +83,7 @@ namespace rt
                     if (intersection.Valid && intersection.Visible)
                     {
                         // Start with ambient lighting component
-                        var color = intersection.Material.Ambient ;
+                        var color = intersection.Material.Ambient * 1.5;
 
                         foreach (var light in lights)
                         {
@@ -115,7 +115,7 @@ namespace rt
                                 // Diffuse lighting component (only if N * T > 0)
                                 if (NdotT > 0)
                                 {
-                                    color += intersection.Material.Diffuse * light.Diffuse * NdotT;
+                                    color += intersection.Material.Diffuse * light.Diffuse * NdotT ;
                                 }
 
                                 // Specular lighting component (only if E * R > 0)

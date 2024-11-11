@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace rt;
 
-public class RawCtMask: Geometry
+public class RawCtMask : Geometry
 {
     private readonly Vector _position;
     private readonly double _scale;
@@ -15,6 +15,7 @@ public class RawCtMask: Geometry
     private readonly double[] _thickness = new double[3];
     private readonly Vector _v0;
     private readonly Vector _v1;
+    private readonly Ellipsoid boundingEllipsoid;
 
     public RawCtMask(string datFile, string rawFile, Vector position, double scale, ColorMap colorMap) : base(Color.NONE)
     {
@@ -31,7 +32,8 @@ public class RawCtMask: Geometry
                 _resolution[0] = Convert.ToInt32(kv[1]);
                 _resolution[1] = Convert.ToInt32(kv[2]);
                 _resolution[2] = Convert.ToInt32(kv[3]);
-            } else if (kv[0] == "SliceThickness")
+            }
+            else if (kv[0] == "SliceThickness")
             {
                 _thickness[0] = Convert.ToDouble(kv[1]);
                 _thickness[1] = Convert.ToDouble(kv[2]);
@@ -40,7 +42,13 @@ public class RawCtMask: Geometry
         }
 
         _v0 = position;
-        _v1 = position + new Vector(_resolution[0]*_thickness[0]*scale, _resolution[1]*_thickness[1]*scale, _resolution[2]*_thickness[2]*scale);
+        var diagonal = new Vector
+        (
+            _resolution[0] * _thickness[0] * scale,
+            _resolution[1] * _thickness[1] * scale,
+            _resolution[2] * _thickness[2] * scale
+        );
+        _v1 = position + diagonal;
 
         var len = _resolution[0] * _resolution[1] * _resolution[2];
         _data = new byte[len];
@@ -49,8 +57,13 @@ public class RawCtMask: Geometry
         {
             throw new InvalidDataException($"Failed to read the {len}-byte raw data");
         }
+
+        var halfDiagonal = diagonal / 2;
+
+        boundingEllipsoid = new Ellipsoid
+            (position + halfDiagonal, halfDiagonal, 1, Color.NONE);
     }
-    
+
     private ushort Value(int x, int y, int z)
     {
         if (x < 0 || y < 0 || z < 0 || x >= _resolution[0] || y >= _resolution[1] || z >= _resolution[2])
@@ -63,14 +76,55 @@ public class RawCtMask: Geometry
 
     public override Intersection GetIntersection(Line line, double minDist, double maxDist)
     {
-        // ADD CODE HERE
-        return Intersection.NONE;
+        var (t1, t2) = boundingEllipsoid.CalculateIntersectionParameters(line);
+        if (t1 == null || t2 == null)
+        {
+            return Intersection.NONE;
+        }
+
+        var start = Math.Max(t1 ?? 0, minDist);
+        var end = Math.Min(t2 ?? 0, maxDist);
+        var stepSize = _scale;
+        var firstIntersection = 0d;
+        var normal = new Vector();
+        var globalColor = new Color();
+        var lastAlpha = 1d;
+        var passedFirst = false;
+        for (var t = start; t <= end; t += stepSize)
+        {
+            var point = line.CoordinateToPosition(t);
+
+            var pointColor = GetColor(point);
+            if (pointColor.Alpha == 0) continue;
+            if (!passedFirst)
+            {
+                firstIntersection = t;
+                normal = GetNormal(point);
+                passedFirst = true;
+            }
+
+            globalColor += pointColor * pointColor.Alpha * lastAlpha;
+            lastAlpha *= 1 - pointColor.Alpha;
+            if (lastAlpha < 1e-10) break;
+        }
+
+        return new Intersection
+        (
+            true,
+            passedFirst,
+            this,
+            line,
+            firstIntersection,
+            normal,
+            Material.FromColor(globalColor),
+            globalColor
+        );
     }
-    
+
     private int[] GetIndexes(Vector v)
     {
-        return new []{
-            (int)Math.Floor((v.X - _position.X) / _thickness[0] / _scale), 
+        return new[]{
+            (int)Math.Floor((v.X - _position.X) / _thickness[0] / _scale),
             (int)Math.Floor((v.Y - _position.Y) / _thickness[1] / _scale),
             (int)Math.Floor((v.Z - _position.Z) / _thickness[2] / _scale)};
     }
