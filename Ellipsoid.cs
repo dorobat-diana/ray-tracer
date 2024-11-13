@@ -62,7 +62,8 @@ namespace rt
             var t = t1 >= minDist ? t1.Value : t2.Value;
 
             var intersectionPoint = line.CoordinateToPosition(t);
-            var normal = (intersectionPoint - Center) / Radius;
+            var normal = (intersectionPoint - Center) / SemiAxesLength;
+            normal /= SemiAxesLength;
             normal.Normalize();
 
             return new Intersection(true, true, this, line, t, normal, Material, Color);

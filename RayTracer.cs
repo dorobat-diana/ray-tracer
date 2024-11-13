@@ -18,12 +18,13 @@ namespace rt
             return -n * viewPlaneSize / imgSize + viewPlaneSize / 2;
         }
 
-        private Intersection FindFirstIntersection(Line ray, double minDist, double maxDist)
+        private Intersection FindFirstIntersection(Line ray, double minDist, double maxDist, bool skip=false)
         {
             var intersection = Intersection.NONE;
-
+        
             foreach (var geometry in geometries)
-            {
+            {   
+                if(skip && geometry is RawCtMask) continue;
                 var intr = geometry.GetIntersection(ray, minDist, maxDist);
 
                 if (!intr.Valid || !intr.Visible) continue;
@@ -44,7 +45,7 @@ namespace rt
         private bool IsLit(Vector point, Light light)
         {
             var line = new Line(light.Position, point);
-            var intersection = FindFirstIntersection(line, 0.001, (light.Position - point).Length());
+            var intersection = FindFirstIntersection(line, 0.001, (light.Position - point).Length(),true);
             if (!intersection.Valid || !intersection.Visible)
                 return true;
             return intersection.T > (light.Position - point).Length()-0.001;
@@ -52,7 +53,7 @@ namespace rt
 
         public void Render(Camera camera, int width, int height, string filename)
         {
-            var background = new Color(0.1, 0.1, 0.1, 1.0); // Background color
+            var background = new Color(0.2, 0.2, 0.2, 1.0); // Background color
 
             var image = new Image(width, height);
 
@@ -65,7 +66,7 @@ namespace rt
                     double v = ImageToViewPlane(j, height, camera.ViewPlaneHeight);
 
                     // Compute the right vector for the view plane
-                    Vector viewRight = (camera.Direction ^ camera.Up).Normalize(); // Cross product
+                    Vector viewRight = (camera.Up ^ camera.Direction).Normalize(); // Cross product
 
                     // Compute the position on the view plane
                     Vector pixelPosition = (camera.Direction * camera.ViewPlaneDistance +
@@ -83,10 +84,11 @@ namespace rt
                     if (intersection.Valid && intersection.Visible)
                     {
                         // Start with ambient lighting component
-                        var color = intersection.Material.Ambient * 1.5;
+                        var color = new Color();
 
                         foreach (var light in lights)
                         {
+                            var lightContrib = intersection.Material.Ambient * light.Ambient;
                             // Check if the point is lit by this light
                             if (IsLit(intersection.Position, light))
                             {
@@ -106,29 +108,32 @@ namespace rt
                                 Vector E = (C - V).Normalize();
 
                                 // Normal to the surface at the intersection point (N)
-                                Vector N = intersection.Normal.Normalize();
+                                Vector N = intersection.Normal;
 
                                 // Compute reflection vector (R)
                                 double NdotT = N * T;
-                                Vector R = (2 * NdotT * N - T ).Normalize();
+                                Vector R = (N*(NdotT)*2 - T ).Normalize();
 
                                 // Diffuse lighting component (only if N * T > 0)
                                 if (NdotT > 0)
                                 {
-                                    color += intersection.Material.Diffuse * light.Diffuse * NdotT ;
+                                    lightContrib += intersection.Material.Diffuse * light.Diffuse * NdotT ;
                                 }
 
                                 // Specular lighting component (only if E * R > 0)
                                 double EdotR = E * R;
                                 if (EdotR > 0)
                                 {
-                                    color += intersection.Material.Specular * light.Specular *
+                                    lightContrib += intersection.Material.Specular * light.Specular *
                                              Math.Pow(EdotR, intersection.Material.Shininess);
                                 }
+
+                                lightContrib *= light.Intensity;
                             }
 
                             // Apply the light intensity (L)
-                            color *= light.Intensity;
+                            color += lightContrib;
+                            
                         }
                         
                         // Set pixel color based on the final computed color
